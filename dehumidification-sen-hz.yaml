@@ -1,0 +1,399 @@
+substitutions:
+  name: "dehumidification-sen-hz"
+  friendly_name: 森井除湿机-杭州
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  name_add_mac_suffix: false
+
+esp32:
+  board: esp32dev
+
+logger:
+  level: debug  #You Can Use "INFO" Level
+  baud_rate: 0
+  
+  # Enable Home Assistant API
+api:
+  
+ota:
+  
+  
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  
+    # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "dehumidification-sen-hz"
+     
+captive_portal:
+# Sets up Bluetooth LE (Only on ESP32) to allow the user
+# to provision wifi credentials to the device.
+esp32_improv:
+  authorizer: none
+
+# To have a "next url" for improv serial
+web_server:  
+switch:
+  - platform: gpio
+    pin: GPIO21
+
+    name: dehumidification-sen-hz-button
+    id: relay1
+    #interlock: &interlock_group [relay1, relay2, relay3, relay4]
+    on_turn_on:
+    - delay: 166ms
+    - switch.turn_off: relay1
+
+
+binary_sensor:
+  - platform: gpio
+    id: machine_on
+    pin:
+      number: GPIO26
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    name: 1machine_on
+    device_class: power 
+  - platform: gpio
+    id: comfort_humidity
+    pin:
+      number: GPIO18
+  #    inverted: true
+      mode:
+        input: true
+        pullup: true
+    name: 2comfort_humidity
+    device_class: running 
+  - platform: gpio
+    id: dry_comfort_humidity
+    pin:
+      number: GPIO19
+   #   inverted: true
+      mode:
+        input: true
+        pullup: true
+    name: 3dry_comfort_humidity
+    device_class: running 
+  - platform: gpio
+    id: dry_humidity
+    pin:
+      number: GPIO23
+  #    inverted: true
+      mode:
+        input: true
+        pullup: true
+    name: 4dry_humidity
+    device_class: running     
+  - platform: gpio
+    id: continuous_dehumidification
+    pin:
+      number: GPIO27
+   #   inverted: true
+      mode:
+        input: true
+        pullup: true
+    name: 5continuous_dehumidification
+    device_class: running      
+  - platform: gpio
+    id: water_full
+    pin:
+      number: GPIO22
+   #   inverted: true
+      mode:
+        input: true
+        pullup: true
+    name: 6water_full
+    device_class: running 
+    filters:
+
+      - delayed_off: 2000ms     
+
+
+sensor:    
+  - platform: wifi_signal
+    name: sen-dehumidification-hz-WiFi Signal
+    update_interval: 60s    
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: sen-dehumidification-hz-IP Address       
+
+button: 
+  - platform: restart
+    name: sen-dehumidification-hz-Restart     
+
+  - platform: template
+    name: "关机"  
+#    name: "Switch to Continuous Dehumidification"
+    on_press:
+      then:
+        - if:
+            condition:
+              binary_sensor.is_off: water_full
+            then:
+              - if:
+                  condition:
+                    binary_sensor.is_on: machine_on
+                  then:
+                    - if:
+                        condition:
+                          binary_sensor.is_on: comfort_humidity
+                        then:
+                          - switch.turn_on: relay1
+                          - delay: 1500ms
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms
+                          - switch.turn_on: relay1
+                          - delay: 1500ms
+                          - switch.turn_on: relay1
+                          - delay: 1500ms
+                    - if:
+                        condition:
+                          binary_sensor.is_on: dry_comfort_humidity
+                        then:
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms
+                          - switch.turn_on: relay1
+                          - delay: 1500ms
+                          - switch.turn_on: relay1
+                          - delay: 1500ms
+                    - if:
+                        condition:
+                          binary_sensor.is_on: dry_humidity
+                        then:
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms
+                          - switch.turn_on: relay1
+                          - delay: 1500ms
+                  
+                    - if:
+                        condition:
+                          binary_sensor.is_on: continuous_dehumidification
+                        then:
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms
+
+
+
+
+
+
+  - platform: template
+    name: "1舒适"  
+#    name: "Switch to Continuous Dehumidification"
+    on_press:
+      then:
+        - if:
+            condition:
+              binary_sensor.is_off: water_full
+            then:
+              - if:
+                  condition:
+                    binary_sensor.is_on: machine_on
+                  then:
+                    - if:
+                        condition:
+                          binary_sensor.is_on: dry_comfort_humidity
+                        then:
+                          - switch.turn_on: relay1
+                          - delay: 1500ms
+                          - switch.turn_on: relay1
+                          - delay: 1500ms
+                          - switch.turn_on: relay1
+                          - delay: 1500ms
+                          - switch.turn_on: relay1
+                          - delay: 1500ms
+                          
+                    - if:
+                        condition:
+                          binary_sensor.is_on: dry_humidity
+                        then:
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms
+
+
+                    - if:
+                        condition:
+                          binary_sensor.is_on: continuous_dehumidification
+                        then:
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms 
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms 
+
+
+              - if:
+                  condition:
+                    binary_sensor.is_off: machine_on
+                  then:
+                    - switch.turn_on: relay1
+                    - delay: 1500ms
+
+
+  - platform: template
+    name: "2干爽"  
+#    name: "Switch to Continuous Dehumidification"
+    on_press:
+      then:
+        - if:
+            condition:
+              binary_sensor.is_off: water_full
+            then:
+              - if:
+                  condition:
+                    binary_sensor.is_on: machine_on
+                  then:
+                    - if:
+                        condition:
+                          binary_sensor.is_on: comfort_humidity
+                        then:
+                          - switch.turn_on: relay1
+                          - delay: 1500ms
+ 
+                          
+                    - if:
+                        condition:
+                          binary_sensor.is_on: dry_humidity
+                        then:
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms
+
+                    - if:
+                        condition:
+                          binary_sensor.is_on: continuous_dehumidification
+                        then:
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms 
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms 
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms 
+
+              - if:
+                  condition:
+                    binary_sensor.is_off: machine_on
+                  then:
+                    - switch.turn_on: relay1
+                    - delay: 1500ms
+                    - switch.turn_on: relay1 
+                    - delay: 1500ms
+
+
+  - platform: template
+    name: "3干燥"  
+#    name: "Switch to Continuous Dehumidification"
+    on_press:
+      then:
+        - if:
+            condition:
+              binary_sensor.is_off: water_full
+            then:
+              - if:
+                  condition:
+                    binary_sensor.is_on: machine_on
+                  then:
+                    - if:
+                        condition:
+                          binary_sensor.is_on: comfort_humidity
+                        then:
+                          - switch.turn_on: relay1
+                          - delay: 1500ms
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms
+                          
+                    - if:
+                        condition:
+                          binary_sensor.is_on: dry_comfort_humidity
+                        then:
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms
+
+                    - if:
+                        condition:
+                          binary_sensor.is_on: continuous_dehumidification
+                        then:
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms 
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms 
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms 
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms 
+              - if:
+                  condition:
+                    binary_sensor.is_off: machine_on
+                  then:
+                    - switch.turn_on: relay1
+                    - delay: 1500ms
+                    - switch.turn_on: relay1 
+                    - delay: 1500ms
+                    - switch.turn_on: relay1 
+                    - delay: 1500ms
+
+
+  - platform: template
+    name: "4连续除湿"  
+#    name: "Switch to Continuous Dehumidification"
+    on_press:
+      then:
+        - if:
+            condition:
+              binary_sensor.is_off: water_full
+            then:
+              - if:
+                  condition:
+                    binary_sensor.is_on: machine_on
+                  then:
+                    - if:
+                        condition:
+                          binary_sensor.is_on: comfort_humidity
+                        then:
+                          - switch.turn_on: relay1
+                          - delay: 1500ms
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms
+                          - switch.turn_on: relay1
+                          - delay: 1500ms
+                    - if:
+                        condition:
+                          binary_sensor.is_on: dry_comfort_humidity
+                        then:
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms
+                          - switch.turn_on: relay1
+                          - delay: 1500ms
+                    - if:
+                        condition:
+                          binary_sensor.is_on: dry_humidity
+                        then:
+                          - switch.turn_on: relay1 
+                          - delay: 1500ms         
+              - if:
+                  condition:
+                    binary_sensor.is_off: machine_on
+                  then:
+                    - switch.turn_on: relay1
+                    - delay: 1500ms
+                    - switch.turn_on: relay1 
+                    - delay: 1500ms
+                    - switch.turn_on: relay1
+                    - delay: 1500ms
+                    - switch.turn_on: relay1
+                    - delay: 1500ms
